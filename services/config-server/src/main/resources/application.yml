@@ -1,0 +1,17 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    # "native" = serve config files from a local/classpath filesystem
+    # location instead of a git repo. There's no git remote for this
+    # project (yet), so a git-backed config server would be an extra
+    # moving part for no real benefit right now.
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: file:///config-repo

@@ -1,0 +1,19 @@
+# Served to every Config Client regardless of spring.application.name --
+# for settings genuinely shared across services. Per-service files
+# (auth-service.yml, user-service.yml, ...) override/add to this.
+
+eureka:
+  instance:
+    # Registers this instance's routable container IP instead of its raw
+    # hostname -- other containers can resolve compose service names, but
+    # not necessarily a container's own hostname.
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+jwt:
+  # Single source of truth for the secret auth-service signs with and
+  # user-service verifies with -- no more hand-copying it into every
+  # service's docker-compose.yml entry.
+  secret: dev-secret-please-use-a-longer-random-value-in-real-deployments
