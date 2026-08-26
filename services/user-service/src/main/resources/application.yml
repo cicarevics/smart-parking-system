@@ -1,0 +1,36 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: user-service
+  config:
+    # "optional:" so this still boots standalone using the defaults below,
+    # falling back to config-server's values -- datasource, jwt.secret --
+    # when it's up.
+    import: optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/user_db}
+    username: ${SPRING_DATASOURCE_USERNAME:parking}
+    password: ${SPRING_DATASOURCE_PASSWORD:parking}
+  jpa:
+    hibernate:
+      # Bare-minimum table creation for now, same as auth-service.
+      # Replace with Flyway/Liquibase migrations once the schema needs to
+      # evolve.
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    # Keeps the JSON wire format snake_case (full_name, user_id, ...)
+    # even though Java fields are camelCase.
+    property-naming-strategy: SNAKE_CASE
+
+jwt:
+  # Must be identical to auth-service's JWT_SECRET -- this service only
+  # verifies tokens auth-service issues, it never issues its own.
+  secret: ${JWT_SECRET:dev-secret-please-use-a-longer-random-value-in-real-deployments}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}

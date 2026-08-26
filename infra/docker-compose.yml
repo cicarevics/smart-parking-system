@@ -50,11 +50,42 @@ services:
     expose:
       - "8000"
 
+  postgres-user:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: parking
+      POSTGRES_PASSWORD: parking
+      POSTGRES_DB: user_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_user_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U parking"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  user-service:
+    build:
+      context: ..
+      dockerfile: services/user-service/Dockerfile
+    # See auth-service's comment -- same config-server-driven setup.
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+    expose:
+      - "8000"
+
   gateway:
     # Replaces Traefik. Routes come from config-server
     # (infra/config-repo/gateway.yml) and resolve against Eureka
-    # (lb://AUTH-SERVICE) instead of Docker labels -- this also means,
-    # unlike Traefik, it needs no Docker socket access.
+    # (lb://AUTH-SERVICE, lb://USER-SERVICE) instead of Docker labels --
+    # this also means, unlike Traefik, it needs no Docker socket access.
     build:
       context: ..
       dockerfile: services/gateway/Dockerfile
@@ -64,6 +95,8 @@ services:
       - eureka-server
       - config-server
       - auth-service
+      - user-service
 
 volumes:
   postgres_auth_data:
+  postgres_user_data:
