@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-auth:5432/auth_db
+    username: parking
+    password: parking
+
+jwt:
+  algorithm: HS256
+  access-token-expire-minutes: 60

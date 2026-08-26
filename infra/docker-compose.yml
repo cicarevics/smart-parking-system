@@ -14,3 +14,56 @@ services:
       - "8888:8888" # e.g. http://localhost:8888/auth-service/default
     depends_on:
       - eureka-server
+
+  postgres-auth:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: parking
+      POSTGRES_PASSWORD: parking
+      POSTGRES_DB: auth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U parking"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ..
+      dockerfile: services/auth-service/Dockerfile
+    # Datasource and JWT settings now come from config-server
+    # (infra/config-repo/{application,auth-service}.yml), not from env
+    # vars here -- that's the point of centralizing them. application.yml
+    # still has local defaults as a fallback for running this outside
+    # Docker without the full stack up.
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+    expose:
+      - "8000"
+
+  gateway:
+    # Replaces Traefik. Routes come from config-server
+    # (infra/config-repo/gateway.yml) and resolve against Eureka
+    # (lb://AUTH-SERVICE) instead of Docker labels -- this also means,
+    # unlike Traefik, it needs no Docker socket access.
+    build:
+      context: ..
+      dockerfile: services/gateway/Dockerfile
+    ports:
+      - "80:8080" # gateway entrypoint -> e.g. http://localhost/auth/login
+    depends_on:
+      - eureka-server
+      - config-server
+      - auth-service
+
+volumes:
+  postgres_auth_data:

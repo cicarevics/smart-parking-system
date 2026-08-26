@@ -1,0 +1,40 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: auth-service
+  config:
+    # "optional:" so this still boots standalone (e.g. local dev without
+    # the full stack running) using the defaults below, falling back to
+    # config-server's values -- datasource, jwt.secret -- when it's up.
+    import: optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/auth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:parking}
+    password: ${SPRING_DATASOURCE_PASSWORD:parking}
+  jpa:
+    hibernate:
+      # Bare-minimum table creation for now, same as the previous FastAPI
+      # version. Replace with Flyway/Liquibase migrations once the schema
+      # needs to evolve.
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    # Keeps the JSON wire format snake_case (access_token, user_id, ...)
+    # so it's unchanged for any client, even though Java fields are
+    # camelCase.
+    property-naming-strategy: SNAKE_CASE
+
+jwt:
+  # jjwt enforces the HS256 minimum key length RFC 7518 recommends (32
+  # bytes) and throws WeakKeyException below that -- keep this long in
+  # every environment.
+  secret: ${JWT_SECRET:dev-secret-please-use-a-longer-random-value-in-real-deployments}
+  algorithm: ${JWT_ALGORITHM:HS256}
+  access-token-expire-minutes: ${ACCESS_TOKEN_EXPIRE_MINUTES:60}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}

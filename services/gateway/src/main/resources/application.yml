@@ -1,0 +1,16 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  config:
+    # "optional:" so a missing config-server doesn't crash startup -- routes
+    # just won't exist until it's reachable, same failure mode as a bad
+    # route config would have anyway.
+    import: optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}

@@ -1,0 +1,12 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          # lb:// resolves AUTH-SERVICE against Eureka instead of a static
+          # host:port -- this replaces Traefik's Docker-label discovery.
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/auth/**
+          filters:
+            - StripPrefix=1
