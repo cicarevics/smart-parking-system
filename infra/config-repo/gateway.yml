@@ -16,3 +16,9 @@ spring:
             - Path=/users/**
           filters:
             - StripPrefix=1
+        - id: parking-service
+          uri: lb://PARKING-SERVICE
+          predicates:
+            - Path=/parking/**
+          filters:
+            - StripPrefix=1
