@@ -148,6 +148,41 @@ services:
     expose:
       - "8000"
 
+  postgres-payment:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: parking
+      POSTGRES_PASSWORD: parking
+      POSTGRES_DB: payment_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U parking"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  payment-service:
+    # Calls reservation-service directly (ownership-check GET, confirm,
+    # failure-path cancel) -- see infra/config-repo and the Charge and
+    # Confirm design notes for which calls forward the driver's own token
+    # vs mint an internal one.
+    build:
+      context: ..
+      dockerfile: services/payment-service/Dockerfile
+    # See auth-service's comment -- same config-server-driven setup.
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+    expose:
+      - "8000"
+
   gateway:
     # Replaces Traefik. Routes come from config-server
     # (infra/config-repo/gateway.yml) and resolve against Eureka
@@ -166,9 +201,18 @@ services:
       - user-service
       - parking-service
       - reservation-service
+      - payment-service
 
 volumes:
   postgres_auth_data:
   postgres_user_data:
   postgres_parking_data:
   postgres_reservation_data:
+  postgres_payment_data:
+
+# NOTE: Kafka is intentionally not included yet. reservation-service's
+# claim-and-expire logic and payment-service's confirm/cancel calls all
+# work via synchronous service-to-service calls for now (no
+# ReservationCreated/ReservationExpired events published). Kafka gets
+# added once notification-service exists and actually needs to consume
+# something.

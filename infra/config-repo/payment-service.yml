@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-payment:5432/payment_db
+    username: parking
+    password: parking

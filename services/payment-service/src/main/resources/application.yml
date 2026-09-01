@@ -1,0 +1,32 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: payment-service
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5436/payment_db}
+    username: ${SPRING_DATASOURCE_USERNAME:parking}
+    password: ${SPRING_DATASOURCE_PASSWORD:parking}
+  jpa:
+    hibernate:
+      # Bare-minimum table creation for now, same as the other services.
+      # Replace with Flyway/Liquibase migrations once the schema needs to
+      # evolve.
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+jwt:
+  # Must be identical to auth-service's JWT_SECRET -- this service verifies
+  # driver tokens auth-service issued, AND mints its own internal token to
+  # call reservation-service's /confirm with (see security/JwtService).
+  secret: ${JWT_SECRET:dev-secret-please-use-a-longer-random-value-in-real-deployments}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}

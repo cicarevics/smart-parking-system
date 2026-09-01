@@ -28,3 +28,9 @@ spring:
             - Path=/reservations/**
           filters:
             - StripPrefix=1
+        - id: payment-service
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/payments/**
+          filters:
+            - StripPrefix=1
