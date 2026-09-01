@@ -22,3 +22,9 @@ spring:
             - Path=/parking/**
           filters:
             - StripPrefix=1
+        - id: reservation-service
+          uri: lb://RESERVATION-SERVICE
+          predicates:
+            - Path=/reservations/**
+          filters:
+            - StripPrefix=1

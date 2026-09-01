@@ -1,0 +1,41 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: reservation-service
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5435/reservation_db}
+    username: ${SPRING_DATASOURCE_USERNAME:parking}
+    password: ${SPRING_DATASOURCE_PASSWORD:parking}
+  jpa:
+    hibernate:
+      # Bare-minimum table creation for now, same as the other services.
+      # Replace with Flyway/Liquibase migrations once the schema needs to
+      # evolve.
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+jwt:
+  # Must be identical to auth-service's JWT_SECRET -- this service verifies
+  # driver tokens auth-service issued, AND mints its own internal tokens
+  # with the same secret to call parking-service (see security/JwtService).
+  secret: ${JWT_SECRET:dev-secret-please-use-a-longer-random-value-in-real-deployments}
+
+reservation:
+  # How long a CONFIRMED (paid, ACTIVE) reservation holds its spot.
+  duration-minutes: ${RESERVATION_DURATION_MINUTES:15}
+  # How long a PENDING_PAYMENT reservation holds its spot before payment
+  # must complete -- short on purpose, since it's blocking the spot from
+  # other drivers on nothing but an unconfirmed intent to pay.
+  payment-window-minutes: ${RESERVATION_PAYMENT_WINDOW_MINUTES:5}
+  expiry-check-interval-ms: ${RESERVATION_EXPIRY_CHECK_INTERVAL_MS:30000}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}

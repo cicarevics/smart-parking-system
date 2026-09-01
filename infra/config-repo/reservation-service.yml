@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-reservation:5432/reservation_db
+    username: parking
+    password: parking
+
+reservation:
+  duration-minutes: 15
+  payment-window-minutes: 5
+  expiry-check-interval-ms: 30000

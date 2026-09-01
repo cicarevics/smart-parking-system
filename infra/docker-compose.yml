@@ -113,6 +113,41 @@ services:
     expose:
       - "8000"
 
+  postgres-reservation:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: parking
+      POSTGRES_PASSWORD: parking
+      POSTGRES_DB: reservation_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_reservation_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U parking"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  reservation-service:
+    # First service that calls another service directly (parking-service's
+    # claim/release), using a self-minted internal token rather than the
+    # driver's own -- see infra/config-repo/reservation-service.yml and the
+    # reservation-flow design notes for why.
+    build:
+      context: ..
+      dockerfile: services/reservation-service/Dockerfile
+    # See auth-service's comment -- same config-server-driven setup.
+    depends_on:
+      postgres-reservation:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+    expose:
+      - "8000"
+
   gateway:
     # Replaces Traefik. Routes come from config-server
     # (infra/config-repo/gateway.yml) and resolve against Eureka
@@ -130,8 +165,10 @@ services:
       - auth-service
       - user-service
       - parking-service
+      - reservation-service
 
 volumes:
   postgres_auth_data:
   postgres_user_data:
   postgres_parking_data:
+  postgres_reservation_data:
