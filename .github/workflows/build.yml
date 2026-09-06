@@ -84,3 +84,14 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}/${{ matrix.service }}:latest
             ghcr.io/${{ github.repository }}/${{ matrix.service }}:${{ github.sha }}
+
+  deploy:
+    needs: [build-and-test, docker-build]
+    if: github.event_name == 'push'
+    runs-on: [self-hosted, Windows]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy with docker compose
+        working-directory: infra
+        run: docker compose up -d --build --remove-orphans
