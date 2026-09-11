@@ -5,6 +5,7 @@ import com.smartparking.paymentservice.client.ReservationView;
 import com.smartparking.paymentservice.dto.ExtensionCreateRequest;
 import com.smartparking.paymentservice.dto.PaymentCreateRequest;
 import com.smartparking.paymentservice.exception.ReservationNotPayableException;
+import com.smartparking.paymentservice.messaging.PaymentEventPublisher;
 import com.smartparking.paymentservice.model.Payment;
 import com.smartparking.paymentservice.model.PaymentStatus;
 import com.smartparking.paymentservice.repository.PaymentRepository;
@@ -33,8 +34,11 @@ class PaymentServiceTest {
     @Mock
     private ReservationServiceClient reservationServiceClient;
 
+    @Mock
+    private PaymentEventPublisher eventPublisher;
+
     private PaymentService service() {
-        return new PaymentService(paymentRepository, reservationServiceClient);
+        return new PaymentService(paymentRepository, reservationServiceClient, eventPublisher);
     }
 
     private static ReservationView reservationView(UUID id, String status) {

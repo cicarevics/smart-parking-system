@@ -5,6 +5,7 @@ import com.smartparking.reservationservice.dto.ReservationCreateRequest;
 import com.smartparking.reservationservice.exception.ReservationNotExtendableException;
 import com.smartparking.reservationservice.exception.ReservationNotFoundException;
 import com.smartparking.reservationservice.exception.ReservationNotPayableException;
+import com.smartparking.reservationservice.messaging.ReservationEventPublisher;
 import com.smartparking.reservationservice.model.Reservation;
 import com.smartparking.reservationservice.model.ReservationStatus;
 import com.smartparking.reservationservice.repository.ReservationRepository;
@@ -25,17 +26,20 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final ParkingServiceClient parkingServiceClient;
+    private final ReservationEventPublisher eventPublisher;
     private final long durationMinutes;
     private final long paymentWindowMinutes;
 
     public ReservationService(
             ReservationRepository reservationRepository,
             ParkingServiceClient parkingServiceClient,
+            ReservationEventPublisher eventPublisher,
             @Value("${reservation.duration-minutes}") long durationMinutes,
             @Value("${reservation.payment-window-minutes}") long paymentWindowMinutes
     ) {
         this.reservationRepository = reservationRepository;
         this.parkingServiceClient = parkingServiceClient;
+        this.eventPublisher = eventPublisher;
         this.durationMinutes = durationMinutes;
         this.paymentWindowMinutes = paymentWindowMinutes;
     }
@@ -53,7 +57,9 @@ public class ReservationService {
         Instant expiresAt = Instant.now().plus(paymentWindowMinutes, ChronoUnit.MINUTES);
         Reservation reservation = new Reservation(
                 userId, request.getLotId(), request.getSpotId(), expiresAt, resolvedDurationMinutes);
-        return reservationRepository.save(reservation);
+        reservation = reservationRepository.save(reservation);
+        eventPublisher.publishCreated(reservation);
+        return reservation;
     }
 
     public List<Reservation> listMine(UUID userId) {

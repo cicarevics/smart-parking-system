@@ -17,3 +17,10 @@ jwt:
   # user-service verifies with -- no more hand-copying it into every
   # service's docker-compose.yml entry.
   secret: dev-secret-please-use-a-longer-random-value-in-real-deployments
+
+spring:
+  kafka:
+    # Shared by reservation-service/payment-service (producers) and
+    # notification-service (consumer) -- the system's async communication
+    # path, alongside the synchronous REST calls between services.
+    bootstrap-servers: kafka:9092

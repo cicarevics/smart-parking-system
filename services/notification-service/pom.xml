@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>com.smartparking</groupId>
-    <artifactId>payment-service</artifactId>
+    <artifactId>notification-service</artifactId>
     <version>0.1.0</version>
-    <name>payment-service</name>
-    <description>Reservation payment handling for the Smart Parking System</description>
+    <name>notification-service</name>
+    <description>Consumes reservation/payment events and records notifications for the Smart Parking System</description>
 
     <properties>
         <java.version>21</java.version>
@@ -29,6 +29,18 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
@@ -40,27 +52,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-config</artifactId>
-        </dependency>
-        <!-- @LoadBalanced RestClient.Builder, resolves lb://RESERVATION-SERVICE
-             against Eureka for the ownership-check and confirm/cancel calls. -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-        </dependency>
-        <!-- Publishes PaymentProcessedEvent for notification-service to
-             consume, the system's async communication path, alongside
-             the synchronous REST calls above. -->
-        <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -68,11 +59,8 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Both directions: verifies driver tokens auth-service issued
-             (incoming requests), and mints its own short-lived,
-             role-scoped token for the one reservation-service call a
-             driver's own token must never be able to make (POST
-             /confirm); see security/JwtService. -->
+        <!-- Verifies tokens auth-service issues, same as parking/user-service;
+             this service never issues its own. -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -101,6 +89,26 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -116,7 +124,7 @@
     </dependencyManagement>
 
     <build>
-        <finalName>payment-service</finalName>
+        <finalName>notification-service</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

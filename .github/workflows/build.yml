@@ -24,6 +24,7 @@ jobs:
           - config-server
           - eureka-server
           - gateway
+          - notification-service
           - parking-service
           - payment-service
           - reservation-service
@@ -58,6 +59,7 @@ jobs:
           - config-server
           - eureka-server
           - gateway
+          - notification-service
           - parking-service
           - payment-service
           - reservation-service

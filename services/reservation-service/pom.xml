@@ -54,6 +54,13 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
+        <!-- Publishes ReservationCreatedEvent for notification-service to
+             consume, the system's async communication path, alongside
+             the synchronous REST calls above. -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.postgresql</groupId>

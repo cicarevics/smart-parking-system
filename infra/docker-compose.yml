@@ -15,6 +15,28 @@ services:
     depends_on:
       - eureka-server
 
+  kafka:
+    # Single-node KRaft mode (broker+controller combined) -- no Zookeeper
+    # needed. Backs the async path: reservation-service and
+    # payment-service publish events here, notification-service consumes
+    # them (see infra/config-repo/application.yml's shared
+    # spring.kafka.bootstrap-servers).
+    image: apache/kafka:3.7.1
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+
   postgres-auth:
     image: postgres:16
     environment:
@@ -26,7 +48,7 @@ services:
     volumes:
       - postgres_auth_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U parking"]
+      test: ["CMD-SHELL", "pg_isready -U parking -d auth_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -61,7 +83,7 @@ services:
     volumes:
       - postgres_user_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U parking"]
+      test: ["CMD-SHELL", "pg_isready -U parking -d user_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -92,7 +114,7 @@ services:
     volumes:
       - postgres_parking_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U parking"]
+      test: ["CMD-SHELL", "pg_isready -U parking -d parking_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -124,7 +146,7 @@ services:
     volumes:
       - postgres_reservation_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U parking"]
+      test: ["CMD-SHELL", "pg_isready -U parking -d reservation_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -145,6 +167,8 @@ services:
         condition: service_started
       config-server:
         condition: service_started
+      kafka:
+        condition: service_started
     expose:
       - "8000"
 
@@ -159,7 +183,7 @@ services:
     volumes:
       - postgres_payment_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U parking"]
+      test: ["CMD-SHELL", "pg_isready -U parking -d payment_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -179,6 +203,44 @@ services:
       eureka-server:
         condition: service_started
       config-server:
+        condition: service_started
+      kafka:
+        condition: service_started
+    expose:
+      - "8000"
+
+  postgres-notification:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: parking
+      POSTGRES_PASSWORD: parking
+      POSTGRES_DB: notification_db
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U parking -d notification_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  notification-service:
+    # Consumes reservation-events/payment-events from Kafka and records a
+    # Notification row for each -- the system's asynchronous counterpart
+    # to every other service's synchronous REST calls.
+    build:
+      context: ..
+      dockerfile: services/notification-service/Dockerfile
+    # See auth-service's comment -- same config-server-driven setup.
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+      kafka:
         condition: service_started
     expose:
       - "8000"
@@ -202,6 +264,7 @@ services:
       - parking-service
       - reservation-service
       - payment-service
+      - notification-service
 
 volumes:
   postgres_auth_data:
@@ -209,10 +272,4 @@ volumes:
   postgres_parking_data:
   postgres_reservation_data:
   postgres_payment_data:
-
-# NOTE: Kafka is intentionally not included yet. reservation-service's
-# claim-and-expire logic and payment-service's confirm/cancel calls all
-# work via synchronous service-to-service calls for now (no
-# ReservationCreated/ReservationExpired events published). Kafka gets
-# added once notification-service exists and actually needs to consume
-# something.
+  postgres_notification_data:

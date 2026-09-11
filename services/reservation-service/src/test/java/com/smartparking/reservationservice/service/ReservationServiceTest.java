@@ -4,6 +4,7 @@ import com.smartparking.reservationservice.client.ParkingServiceClient;
 import com.smartparking.reservationservice.dto.ReservationCreateRequest;
 import com.smartparking.reservationservice.exception.ReservationNotFoundException;
 import com.smartparking.reservationservice.exception.SpotUnavailableException;
+import com.smartparking.reservationservice.messaging.ReservationEventPublisher;
 import com.smartparking.reservationservice.model.Reservation;
 import com.smartparking.reservationservice.model.ReservationStatus;
 import com.smartparking.reservationservice.repository.ReservationRepository;
@@ -37,12 +38,16 @@ class ReservationServiceTest {
     @Mock
     private ParkingServiceClient parkingServiceClient;
 
+    @Mock
+    private ReservationEventPublisher eventPublisher;
+
     private ReservationService reservationService;
 
     @BeforeEach
     void setUp() {
         reservationService = new ReservationService(
-                reservationRepository, parkingServiceClient, DEFAULT_DURATION_MINUTES, PAYMENT_WINDOW_MINUTES);
+                reservationRepository, parkingServiceClient, eventPublisher,
+                DEFAULT_DURATION_MINUTES, PAYMENT_WINDOW_MINUTES);
     }
 
     @Test

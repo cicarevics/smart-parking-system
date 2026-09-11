@@ -6,6 +6,7 @@ import com.smartparking.paymentservice.dto.ExtensionCreateRequest;
 import com.smartparking.paymentservice.dto.PaymentCreateRequest;
 import com.smartparking.paymentservice.exception.ReservationNotExtendableException;
 import com.smartparking.paymentservice.exception.ReservationNotPayableException;
+import com.smartparking.paymentservice.messaging.PaymentEventPublisher;
 import com.smartparking.paymentservice.model.Payment;
 import com.smartparking.paymentservice.model.PaymentStatus;
 import com.smartparking.paymentservice.repository.PaymentRepository;
@@ -26,10 +27,16 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final ReservationServiceClient reservationServiceClient;
+    private final PaymentEventPublisher eventPublisher;
 
-    public PaymentService(PaymentRepository paymentRepository, ReservationServiceClient reservationServiceClient) {
+    public PaymentService(
+            PaymentRepository paymentRepository,
+            ReservationServiceClient reservationServiceClient,
+            PaymentEventPublisher eventPublisher
+    ) {
         this.paymentRepository = paymentRepository;
         this.reservationServiceClient = reservationServiceClient;
+        this.eventPublisher = eventPublisher;
     }
 
     public Payment pay(UUID driverId, String authorizationHeader, PaymentCreateRequest request) {
@@ -45,6 +52,7 @@ public class PaymentService {
         } else {
             reservationServiceClient.cancel(request.getReservationId(), authorizationHeader);
         }
+        eventPublisher.publish(payment, "INITIAL");
         return payment;
     }
 
@@ -63,6 +71,7 @@ public class PaymentService {
         if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
             reservationServiceClient.extend(request.getReservationId(), driverId, request.getAdditionalMinutes());
         }
+        eventPublisher.publish(payment, "EXTENSION");
         return payment;
     }
 

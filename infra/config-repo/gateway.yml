@@ -34,3 +34,9 @@ spring:
             - Path=/payments/**
           filters:
             - StripPrefix=1
+        - id: notification-service
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/notifications/**
+          filters:
+            - StripPrefix=1
