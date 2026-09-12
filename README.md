@@ -40,7 +40,7 @@ cd services/parking-service
 mvn spring-boot:run
 ```
 
-## 3. Quick Start
+## 3. API Walkthrough
 
 Each command below is a single line. If you're using bash, Git Bash, or
 WSL, run them as-is. If you're using PowerShell, use `curl.exe` instead
